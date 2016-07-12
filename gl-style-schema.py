@@ -6,6 +6,11 @@ import argparse
 
 
 def extract_filter_fields(expr):
+    """
+    Extract fields used in filter expressions
+    Resolve the combining filter expressions as well.
+    TODO: Does not work for all filter combinations yet
+    """
     if len(expr) < 1:
         return
 
@@ -67,6 +72,10 @@ def parse_style_layers(spec):
             source = layer['source-layer']
             for field in extract_filter_fields(layer.get('filter', [])):
                 schema.add_field(source, field)
+
+            for field in extract_layout_fields(layer):
+                schema.add_field(source, field)
+
     return schema
 
 
@@ -80,10 +89,12 @@ def parse_tilejson_layers(spec):
 
 
 class VectorSchema(object):
+    "Vector tile schema consisting out of several unique layers"
     def __init__(self):
         self.layers = {}
 
     def add_field(self, layer_name, field_name):
+        "Record field usage into appropriate layer"
         if layer_name not in self.layers:
             self.layers[layer_name] = Layer(layer_name)
 

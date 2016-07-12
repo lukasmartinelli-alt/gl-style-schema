@@ -4,7 +4,7 @@ Dump the vector tile schema defined in a [TileJSON spec](https://github.com/mapb
 or as required by [Mapbox GL style JSON](https://github.com/mapbox/mapbox-gl-style-spec).
 
 Use Cases:
-- Compare used schema in style vs provided schema (check how much you actually use)
+- Compare used schema in style vs provided schema (check how much of the schema you actually use)
 - Compare two different vector tile sets
 - Compare schema required by multiple styles
 
@@ -47,7 +47,6 @@ Layers are denoted with `#layer` and fields with `[field]`.
 
 Compare the vector tile schema of [OSM2VectorTiles](osm2vectortiles.org) with [Mapbox Streets](https://www.mapbox.com/vector-tiles/mapbox-streets-v7/).
 
-
 ```bash
 # TileJSON URLs
 MBSTREETS_TILEJSON="http://api.mapbox.com/v4/mapbox.mapbox-streets-v7.json?access_token=pk.eyJ1IjoibW9yZ2Vua2FmZmVlIiwiYSI6IjIzcmN0NlkifQ.0LRTNgCc-envt9d5MzR75w"
@@ -58,5 +57,5 @@ curl $MBSTREETS_TILEJSON | ./gl-style-schema.py > mapbox-streets-v7.schema
 curl $OSMVT_TILEJSON | ./gl-style-schema.py > osm2vectortiles-v2.schema
 
 # Compare schemas
-diff mapbox-streets-v7.schema osm2vectortiles-v2.schema
+diff -c mapbox-streets-v7.schema osm2vectortiles-v2.schema
 ```
