@@ -70,6 +70,15 @@ def parse_style_layers(spec):
     return schema
 
 
+def parse_tilejson_layers(spec):
+    schema = VectorSchema()
+    for layer in spec['vector_layers']:
+        source = layer['id']
+        for field in layer['fields'].keys():
+            schema.add_field(source, field)
+    return schema
+
+
 class VectorSchema(object):
     def __init__(self):
         self.layers = {}
@@ -117,6 +126,6 @@ if __name__ == '__main__':
     elif 'layers' in spec:
         schema = parse_style_layers(spec)
     else:
-        sys.exit('Input is neither a valid TileJSON spec or Mapbox GL style spec')
+        sys.exit('Input is neither a valid TileJSON spec or Mapbox GL style')
 
     print(schema)
