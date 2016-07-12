@@ -1,17 +1,8 @@
 #!/usr/bin/env python
-"""Dump schema of vector tiles required by Mapbox GL style JSON.
-Usage:
-  gl-style-schema.py dump <json_spec>
-  gl-style-schema.py (-h | --help)
-  gl-style-schema.py --version
-Options:
-  -h --help                 Show this screen.
-  --version                 Show version.
-"""
-import yaml
+import json
 import re
-import collections
-from docopt import docopt
+import sys
+import argparse
 
 
 def extract_filter_fields(expr):
@@ -69,43 +60,63 @@ def extract_layout_fields(layer):
         yield field
 
 
-def find_layers(spec):
+def parse_style_layers(spec):
+    schema = VectorSchema()
     for layer in spec['layers']:
-
         if 'source-layer' in layer:
             source = layer['source-layer']
+            for field in extract_filter_fields(layer.get('filter', [])):
+                schema.add_field(source, field)
+    return schema
 
-            filter_fields = list(extract_filter_fields(layer.get('filter', [])))
-            layout_fields = list(extract_layout_fields(layer))
 
-            fields = filter_fields + layout_fields
-            yield Layer(
-                source,
-                [k for k in fields if not is_special_key(k)]
-            )
+class VectorSchema(object):
+    def __init__(self):
+        self.layers = {}
+
+    def add_field(self, layer_name, field_name):
+        if layer_name not in self.layers:
+            self.layers[layer_name] = Layer(layer_name)
+
+        if not is_special_key(field_name):
+            self.layers[layer_name].add_field(field_name)
+
+    def __str__(self):
+        layers = sorted(self.layers.values(), key=lambda l: l.name)
+        return '\n'.join([l.__str__() for l in layers])
 
 
 class Layer(object):
-    def __init__(self, name, fields):
+    def __init__(self, name):
         self.name = name
-        self.fields = fields
+        self.fields = set()
+
+    def add_field(self, field_name):
+        try:
+            self.fields.add(field_name)
+        # Ignore fields that are strings (false positives)
+        except TypeError:
+            pass
+
+    def __str__(self):
+        lines = ['#{0}'.format(self.name)]
+        for field_name in self.fields:
+            lines.append('  [{0}]'.format(field_name))
+        return '\n'.join(lines)
 
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version=1)
-    spec_file = args['<json_spec>']
-    spec = yaml.load(open(spec_file))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('specfile', nargs='?', type=argparse.FileType('r'),
+                        default=sys.stdin)
+    args = parser.parse_args()
+    spec = json.loads(args.specfile.read())
 
-    layers = collections.defaultdict(dict)
-    for layer in find_layers(spec):
-        for field in layer.fields:
-            try:
-                layers[layer.name][field] = True
-            except TypeError:
-                pass
+    if 'tilejson' in spec and 'vector_layers' in spec:
+        schema = parse_tilejson_layers(spec)
+    elif 'layers' in spec:
+        schema = parse_style_layers(spec)
+    else:
+        sys.exit('Input is neither a valid TileJSON spec or Mapbox GL style spec')
 
-    for source, fields in layers.items():
-        print('[{0}]'.format(source))
-        for field_name in fields.keys():
-            print(field_name)
-        print('-' * 10)
+    print(schema)
