@@ -109,7 +109,7 @@ class Layer(object):
 
     def __str__(self):
         lines = ['#{0}'.format(self.name)]
-        for field_name in self.fields:
+        for field_name in sorted(self.fields):
             lines.append('  [{0}]'.format(field_name))
         return '\n'.join(lines)
 
