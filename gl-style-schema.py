@@ -9,6 +9,7 @@ Options:
   --version                 Show version.
 """
 import yaml
+import re
 import collections
 from docopt import docopt
 
@@ -33,22 +34,39 @@ def extract_filter_fields(expr):
 
     if (is_existential_filter(fname) or is_comparison_filter(fname) or
        is_membership_filter(fname)):
-            if expr[1][0] != '$':
-                yield expr[1]
+            yield expr[1]
 
     elif is_combining_filter(fname):
         for subexpr in expr[1:]:
-            if subexpr[1][0] != '$':
-                yield subexpr[1]
+            yield subexpr[1]
 
 
-def extract_text_field(layer):
-    try:
-        text_field = layer['layout']['text-field']
-        if '{' == text_field[0] and '}' == text_field[-1]:
-            yield text_field[1:-1]
-    except KeyError:
-        pass
+def find_tokens(obj):
+    "Find {tokens} referencing a data property to pull from"
+
+    def extract_tokens(val):
+        match = re.search('{(\w*)}', val)
+        if match:
+            return match.groups()
+        else:
+            return []
+
+    for key, val in obj.items():
+        if isinstance(val, str):
+            for token in extract_tokens(val):
+                yield token
+
+
+def is_special_key(key):
+    return key[0] == '$'
+
+
+def extract_layout_fields(layer):
+    if 'layout' not in layer:
+        return
+
+    for field in find_tokens(layer['layout']):
+        yield field
 
 
 def find_layers(spec):
@@ -58,9 +76,19 @@ def find_layers(spec):
             source = layer['source-layer']
 
             filter_fields = list(extract_filter_fields(layer.get('filter', [])))
-            text_fields = list(extract_text_field(layer))
+            layout_fields = list(extract_layout_fields(layer))
 
-            yield (source, filter_fields + text_fields)
+            fields = filter_fields + layout_fields
+            yield Layer(
+                source,
+                [k for k in fields if not is_special_key(k)]
+            )
+
+
+class Layer(object):
+    def __init__(self, name, fields):
+        self.name = name
+        self.fields = fields
 
 
 if __name__ == '__main__':
@@ -69,15 +97,15 @@ if __name__ == '__main__':
     spec = yaml.load(open(spec_file))
 
     layers = collections.defaultdict(dict)
-    for source, fields in find_layers(spec):
-        for field in fields:
+    for layer in find_layers(spec):
+        for field in layer.fields:
             try:
-                layers[source][field] = True
+                layers[layer.name][field] = True
             except TypeError:
                 pass
 
-    for layer, fields in layers:
-        print(layer)
-        print(['-'] * 10)
+    for source, fields in layers.items():
+        print('[{0}]'.format(source))
         for field_name in fields.keys():
             print(field_name)
+        print('-' * 10)
