@@ -1,7 +1,7 @@
 # gl-style-schema
 
-Dump the vector tile schema defined in a TileJSON spec or as required
-by Mapbox GL style JSON.
+Dump the vector tile schema defined in a [TileJSON spec](https://github.com/mapbox/tilejson-spec)
+or as required by [Mapbox GL style JSON](https://github.com/mapbox/mapbox-gl-style-spec).
 
 Use Cases:
 - Compare used schema in style vs provided schema (check how much you actually use)
@@ -22,7 +22,7 @@ wget "https://osm2vectortiles.tileserver.com/v2.json"
 
 ## Output
 
-Layers are denoted with `#layer` and fields with `[field]` and are always sorted alphabetially.
+Layers are denoted with `#layer` and fields with `[field]`.
 
 ```css
 #admin
