@@ -47,8 +47,8 @@ def find_tokens(obj):
         else:
             return []
 
-    for key, val in obj.items():
-        if isinstance(val, str):
+    for val in obj.values():
+        if isinstance(val, str) or isinstance(val, basestring):
             for token in extract_tokens(val):
                 yield token
 
