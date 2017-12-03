@@ -1,5 +1,7 @@
 # gl-style-schema
 
+> :warning: This repository is no longer maintained by Lukas Martinelli.
+
 Dump the vector tile schema defined in a [TileJSON spec](https://github.com/mapbox/tilejson-spec)
 or as required by [Mapbox GL style JSON](https://github.com/mapbox/mapbox-gl-style-spec).
 
